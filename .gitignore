@@ -1,3 +1,8 @@
 *.txt
 build/
 acacgs
+
+*.out
+*.err
+
+*.sh
