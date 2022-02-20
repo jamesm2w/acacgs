@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include <immintrin.h>
+
 #include "mytimer.h"
 #include "conjugateGradient.h"
 
@@ -45,9 +47,14 @@ int conjugateGradient(struct mesh *A,
   int nrow = A->local_nrow;
   int ncol = A->local_ncol;
 
-  double *r = (double *) malloc(sizeof(double) * nrow);
-  double *p = (double *) malloc(sizeof(double) * ncol); // In parallel case, A is rectangular
-  double *Ap = (double *) malloc(sizeof(double) * nrow);
+  double *r = (double *)  _mm_malloc(sizeof(double) * nrow, 32);
+  double *p = (double *)  _mm_malloc(sizeof(double) * ncol, 32); // In parallel case, A is rectangular
+  double *Ap = (double *) _mm_malloc(sizeof(double) * nrow, 32);
+
+  // Non-Aligned version if you want to cause segfaults
+  // double *r = (double *)  malloc(sizeof(double) * nrow);
+  // double *p = (double *)  malloc(sizeof(double) * ncol); // In parallel case, A is rectangular
+  // double *Ap = (double *) malloc(sizeof(double) * nrow);
 
   *normr = 0.0;
   double rtrans = 0.0;
