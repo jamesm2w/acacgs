@@ -14,13 +14,14 @@
  */
 int ddot (const int n, const double * const x, const double * const y, double * const result) {  
   double local_result = 0.0;
+  
   if (y==x){
     
     //#pragma GCC unroll 4
     
     int loopN = (n / 4) * 4;
     int i = 0;
-    
+    // #pragma omp parallel for reduction(+:local_result) private(i)
     for (i = 0; i < loopN; i += 4) {
       __m256d xvec = _mm256_load_pd(x + i); // Load x[1..4]
       __m256d xvec2 = _mm256_mul_pd(xvec, xvec); // Multiply vector by vector
@@ -48,7 +49,7 @@ int ddot (const int n, const double * const x, const double * const y, double * 
 
     int loopN = (n / 4) * 4;
     int i = 0;
-    
+    // #pragma omp parallel for reduction(+:local_result) private(i) - Slows down code, like by a lot :lawl:
     for (i = 0; i < loopN; i += 4) {
       __m256d xvec = _mm256_load_pd(x + i); // Load x[1..4]
       __m256d yvec = _mm256_load_pd(y + i);
