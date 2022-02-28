@@ -5,8 +5,6 @@
 #include <string.h>
 #include <time.h>
 
-#include <omp.h>
-
 #include "generate_matrix.h"
 #include "mytimer.h"
 #include "sparsemv.h"
@@ -36,16 +34,11 @@ int main(int argc, char *argv[])
   int nx, ny, nz;
   int stencil_bool = 0;
 
-  #pragma omp parallel 
-  {
-    printf("Number of threads: %d \n", omp_get_num_threads());
-  }
-
   /* Create file and dir (and if using Silo, the Silo) name */
   time_t rawtime;
   time(&rawtime);
   struct tm * ptm = localtime(&rawtime);
-  char fileName[72];
+  char fileName[25];
   sprintf(fileName,"%04d_%02d_%02d_%02d_%02d_%02d",ptm->tm_year + 1900, ptm->tm_mon+1,
     ptm->tm_mday, ptm->tm_hour, ptm->tm_min,ptm->tm_sec);
 

@@ -5,8 +5,6 @@
 
 #include "sparsemv.h"
 
-#include <omp.h>
-
 /**
  * @brief Compute matrix vector product (y = A*x)
  * 
@@ -19,65 +17,17 @@ int sparsemv(struct mesh *A, const double * const x, double * const y)
 {
 
   const int nrow = (const int) A->local_nrow;
-  int i = 0;
-  //int loopN = (nrow / 4) * 4;
 
-  #pragma GCC unroll(4)
-  for (i = 0; i < nrow; i++) {
-    double sum = 0.0;
-    
-    const double * const cur_vals = (const double * const) A->ptr_to_vals_in_row[i];
-    const int    * const cur_inds = (const int    * const) A->ptr_to_inds_in_row[i];
-    const int             cur_nnz = (const int)            A->nnz_in_row[i];
+  for (int i=0; i< nrow; i++) {
+      double sum = 0.0;
+      const double * const cur_vals = (const double * const) A->ptr_to_vals_in_row[i];
+      const int * const cur_inds = (const int * const) A->ptr_to_inds_in_row[i];
+      const int cur_nnz = (const int) A->nnz_in_row[i];
 
-    #pragma GCC unroll(4)
-    for (int j = 0; j < cur_nnz; j++) {
-      sum = sum + cur_vals[j] * x[cur_inds[j]];
+      for (int j=0; j< cur_nnz; j++) {
+        sum += cur_vals[j]*x[cur_inds[j]];
+      }
+      y[i] = sum;
     }
-
-    y[i] = sum;
-  }
-
-  
-  // #pragma omp parallel for private(i)
-  // for (i = 0; i < loopN; i += 4) {
-  //   double sum0 = 0.0;
-  //   double sum1 = 0.0;
-  //   double sum2 = 0.0;
-  //   double sum3 = 0.0;
-    
-  //   const double * const cur_vals = (const double * const) A->ptr_to_vals_in_row[i];
-  //   const int    * const cur_inds = (const int    * const) A->ptr_to_inds_in_row[i];
-  //   const int             cur_nnz = (const int)            A->nnz_in_row[i];
-
-  //   #pragma GCC unroll(4)
-  //   for (int j = 0; j < cur_nnz; j++) {
-  //     sum0 = sum0 +     cur_vals[j] * x[    cur_inds[j]];
-  //     sum1 = sum1 + (cur_vals+1)[j] * x[(cur_inds+1)[j]];
-  //     sum2 = sum2 + (cur_vals+2)[j] * x[(cur_inds+2)[j]];
-  //     sum3 = sum3 + (cur_vals+3)[j] * x[(cur_inds+3)[j]];
-  //   }
-
-  //   y[i] = sum0;
-  //   y[i+1] = sum1;
-  //   y[i+2] = sum2;
-  //   y[i+3] = sum3;
-  // }
-
-  // for (; i < nrow; i++) {
-  //   double sum = 0.0;
-    
-  //   const double * const cur_vals = (const double * const) A->ptr_to_vals_in_row[i];
-  //   const int    * const cur_inds = (const int    * const) A->ptr_to_inds_in_row[i];
-  //   const int             cur_nnz = (const int)            A->nnz_in_row[i];
-
-  //   #pragma GCC unroll(4)
-  //   for (int j = 0; j < cur_nnz; j++) {
-  //     sum = sum + cur_vals[j] * x[cur_inds[j]];
-  //   }
-
-  //   y[i] = sum;
-  // }
-  
   return 0;
 }
