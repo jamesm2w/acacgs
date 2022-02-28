@@ -24,11 +24,11 @@ int waxpby (const int n, const double alpha, const double * const x, const doubl
     int i = 0;
     for (i = 0; i < loopN; i += 4) {
 
-      __m256d xvec = _mm256_load_pd(x + i);
-      __m256d yvec = _mm256_load_pd(y + i);
-      yvec = _mm256_mul_pd(yvec, bvec);
+      // __m256d xvec = _mm256_load_pd(x + i);
+      // __m256d yvec = _mm256_load_pd(y + i);
+      // yvec = _mm256_mul_pd(yvec, bvec);
 
-      _mm256_store_pd(w + i, _mm256_add_pd(xvec, yvec));
+      _mm256_store_pd(w + i, _mm256_add_pd(_mm256_load_pd(x + i), _mm256_mul_pd(_mm256_load_pd(y + i), bvec)));
     }
     for (; i < n; i++) {
       w[i] = x[i] + beta * y[i];
@@ -43,11 +43,11 @@ int waxpby (const int n, const double alpha, const double * const x, const doubl
     int i = 0;
     for (i = 0; i < loopN; i += 4) {
 
-      __m256d xvec = _mm256_load_pd(x + i);
-      __m256d yvec = _mm256_load_pd(y + i);
-      xvec = _mm256_mul_pd(xvec, avec);
+//       __m256d xvec = _mm256_load_pd(x + i);
+//       __m256d yvec = _mm256_load_pd(y + i);
+//       xvec = _mm256_mul_pd(xvec, avec);
 
-      _mm256_store_pd(w + i, _mm256_add_pd(xvec, yvec));
+      _mm256_store_pd(w + i, _mm256_add_pd(_mm256_mul_pd(_mm256_load_pd(x + i), avec), _mm256_load_pd(y + i)));
     }
 
     for (; i < n; i++) {
@@ -64,12 +64,12 @@ int waxpby (const int n, const double alpha, const double * const x, const doubl
     int i = 0;
     for (i = 0; i < loopN; i += 4) {
 
-      __m256d xvec = _mm256_load_pd(x + i);
-      __m256d yvec = _mm256_load_pd(y + i);
-      xvec = _mm256_mul_pd(xvec, avec);
-      yvec = _mm256_mul_pd(yvec, bvec);
+      //__m256d xvec = _mm256_load_pd(x + i);
+      //__m256d yvec = _mm256_load_pd(y + i);
+      //xvec = _mm256_mul_pd(xvec, avec);
+      //yvec = _mm256_mul_pd(yvec, bvec);
 
-      _mm256_store_pd(w + i, _mm256_add_pd(xvec, yvec));
+      _mm256_store_pd(w + i, _mm256_add_pd(_mm256_mul_pd(_mm256_load_pd(x + i), avec), _mm256_mul_pd(_mm256_load_pd(y + i), bvec)));
     }
 
     for (; i < n; i++) {
