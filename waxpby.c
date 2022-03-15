@@ -2,9 +2,11 @@
 
 #include <immintrin.h>
 
+#include <stdio.h>
+
 /**
  * @brief Compute the update of a vector with the sum of two scaled vectors
- * 
+ *
  * @param n Number of vector elements
  * @param alpha Scalars applied to x
  * @param x Input vector
@@ -13,70 +15,58 @@
  * @param w Output vector
  * @return int 0 if no error
  */
-int waxpby (const int n, const double alpha, const double * const x, const double beta, const double * const y, double * const w) {  
-  
-  if (alpha == 1.0) {
+int waxpby(const int n, const double* const x, const double beta, const double* const y, double* const w) {
+	// alpha is always 1.0 -- Only the alpha == 1 branch is necessary
+	int loopN = (n / 4) * 4;
+	int i = 0;
 
-    //  #pragma GCC unroll 4
-    __m256d bvec = _mm256_set1_pd(beta);
+	if (beta == 0.0) {
+		// Equivalent to x + 0 * y, i.e. just x
 
-    int loopN = (n / 4) * 4;
-    int i = 0;
-    for (i = 0; i < loopN; i += 4) {
+		for (i = 0; i < loopN; i += 4) {
+			w[i] = x[i];
+			w[i+1] = x[i+1];
+			w[i+2] = x[i+2];
+			w[i+3] = x[i+3];
+		}
 
-      // __m256d xvec = _mm256_load_pd(x + i);
-      // __m256d yvec = _mm256_load_pd(y + i);
-      // yvec = _mm256_mul_pd(yvec, bvec);
+		for (; i < n; i++) {
+			w[i] = x[i];
+		}
 
-      _mm256_store_pd(w + i, _mm256_add_pd(_mm256_load_pd(x + i), _mm256_mul_pd(_mm256_load_pd(y + i), bvec)));
-    }
-    for (; i < n; i++) {
-      w[i] = x[i] + beta * y[i];
-    }
+	} else if (beta == 1.0) {
+		// Equivalent to an add of x + y
+			
+		for (i = 0; i < loopN; i += 4) {
+			__m256d x_vec = _mm256_load_pd(x + i);
+			__m256d y_vec = _mm256_load_pd(y + i);
 
-  } else if (beta == 1.0) {
+			x_vec = _mm256_add_pd(x_vec, y_vec);
 
-    // #pragma GCC unroll 4
-    __m256d avec = _mm256_set1_pd(alpha);
+			_mm256_store_pd(w + i, x_vec);
+		}
 
-    int loopN = (n / 4) * 4;
-    int i = 0;
-    for (i = 0; i < loopN; i += 4) {
+		for (; i < n; i++) {
+			w[i] = x[i] + y[i];
+		}
+	} else {
+		// beta is not 0 or 1 and we have to do the calculation
+		__m256d b_vec = _mm256_set1_pd(beta);
+		
+		for (i = 0; i < loopN; i += 4) {
+			__m256d x_vec = _mm256_load_pd(x + i);
+			__m256d y_vec = _mm256_load_pd(y + i);
 
-//       __m256d xvec = _mm256_load_pd(x + i);
-//       __m256d yvec = _mm256_load_pd(y + i);
-//       xvec = _mm256_mul_pd(xvec, avec);
+			y_vec = _mm256_mul_pd(y_vec, b_vec);
+			x_vec = _mm256_add_pd(x_vec, y_vec);
 
-      _mm256_store_pd(w + i, _mm256_add_pd(_mm256_mul_pd(_mm256_load_pd(x + i), avec), _mm256_load_pd(y + i)));
-    }
+			_mm256_store_pd(w + i, x_vec);
+		}
 
-    for (; i < n; i++) {
-      w[i] = alpha * x[i] + y[i];
-    }
-  
-  } else {
-  
-    // #pragma GCC unroll 4
-    __m256d avec = _mm256_set1_pd(alpha);
-    __m256d bvec = _mm256_set1_pd(beta);
+		for (; i < n; i++) {
+			w[i] = x[i] + beta * y[i];
+		}
+	}
 
-    int loopN = (n / 4) * 4;
-    int i = 0;
-    for (i = 0; i < loopN; i += 4) {
-
-      //__m256d xvec = _mm256_load_pd(x + i);
-      //__m256d yvec = _mm256_load_pd(y + i);
-      //xvec = _mm256_mul_pd(xvec, avec);
-      //yvec = _mm256_mul_pd(yvec, bvec);
-
-      _mm256_store_pd(w + i, _mm256_add_pd(_mm256_mul_pd(_mm256_load_pd(x + i), avec), _mm256_mul_pd(_mm256_load_pd(y + i), bvec)));
-    }
-
-    for (; i < n; i++) {
-      w[i] = alpha * x[i] + beta * y[i];
-    }
-  
-  }
-
-  return 0;
+	return 0;
 }
