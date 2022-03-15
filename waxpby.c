@@ -23,20 +23,22 @@ int waxpby(const int n, const double* const x, const double beta, const double* 
 	if (beta == 0.0) {
 		// Equivalent to x + 0 * y, i.e. just x
 
+		#pragma omp parallel for private(i) firstprivate(loopN) schedule(guided,16)
 		for (i = 0; i < loopN; i += 4) {
 			w[i] = x[i];
 			w[i+1] = x[i+1];
 			w[i+2] = x[i+2];
 			w[i+3] = x[i+3];
 		}
-
-		for (; i < n; i++) {
+		
+		for (i = loopN; i < n; i++) {
 			w[i] = x[i];
 		}
 
 	} else if (beta == 1.0) {
 		// Equivalent to an add of x + y
-			
+		
+		#pragma omp parallel for private(i) firstprivate(loopN) schedule(guided,16)
 		for (i = 0; i < loopN; i += 4) {
 			__m256d x_vec = _mm256_load_pd(x + i);
 			__m256d y_vec = _mm256_load_pd(y + i);
@@ -45,14 +47,15 @@ int waxpby(const int n, const double* const x, const double beta, const double* 
 
 			_mm256_store_pd(w + i, x_vec);
 		}
-
-		for (; i < n; i++) {
+		
+		for (i = loopN; i < n; i++) {
 			w[i] = x[i] + y[i];
 		}
 	} else {
 		// beta is not 0 or 1 and we have to do the calculation
 		__m256d b_vec = _mm256_set1_pd(beta);
 		
+		#pragma omp parallel for private(i) firstprivate(loopN, b_vec) schedule(guided,16)
 		for (i = 0; i < loopN; i += 4) {
 			__m256d x_vec = _mm256_load_pd(x + i);
 			__m256d y_vec = _mm256_load_pd(y + i);
@@ -63,7 +66,7 @@ int waxpby(const int n, const double* const x, const double beta, const double* 
 			_mm256_store_pd(w + i, x_vec);
 		}
 
-		for (; i < n; i++) {
+		for (i = loopN; i < n; i++) {
 			w[i] = x[i] + beta * y[i];
 		}
 	}

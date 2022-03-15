@@ -14,7 +14,7 @@ int sparsemv(struct mesh *A, const double *const x, double *const y) {
 	const int nrow = (const int)A->local_nrow;  // number of rows in A
 	int i = 0;
 
-	#pragma omp parallel for
+	#pragma omp parallel for private(i) firstprivate(nrow) schedule(guided,16)
 	for (i = 0; i < nrow; i++) {
 		double sum = 0.0;
 		__m256d sum_vec = _mm256_set1_pd(sum);
@@ -25,6 +25,7 @@ int sparsemv(struct mesh *A, const double *const x, double *const y) {
 
 		int loopN = (cur_nnz / 4) * 4;
 		int j;
+
 		for (j = 0; j < loopN; j += 4) {  // Loops through all non-zeros in the row `i`
 
 			__m256d cur_vals_j = _mm256_loadu_pd(cur_vals + j);  // non-zero values in row `i` of the matrix
@@ -45,7 +46,7 @@ int sparsemv(struct mesh *A, const double *const x, double *const y) {
 		sum += _mm_cvtsd_f64(_mm_add_sd(sum_vec_low, high64));
 
 		// Cleanup loop
-		for (; j < cur_nnz; j++) {
+		for (j = loopN; j < cur_nnz; j++) {
 			sum = sum + cur_vals[j] * x[cur_inds[j]];
 		}
 
