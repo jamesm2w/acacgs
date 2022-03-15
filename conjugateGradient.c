@@ -143,9 +143,9 @@ int conjugateGradient(struct mesh *A,
   times[3] = t3; // sparsemv time
 
   /* Cleanup created arrays */
-  free(p);
-  free(Ap);
-  free(r);
+  _mm_free(p);
+  _mm_free(Ap);
+  _mm_free(r);
 
   /* Calculate total time spent */
   times[0] = mytimer() - t_begin;

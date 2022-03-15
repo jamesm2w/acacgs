@@ -35,21 +35,21 @@ void generate_matrix(int nx, int ny, int nz, struct mesh **A, double **x, double
   int stop_row = start_row + local_nrow - 1;
 
   // Allocate arrays that are of length local_nrow
-  (*A)->nnz_in_row = (int *) malloc(sizeof(int) * local_nrow);
-  (*A)->ptr_to_vals_in_row = (double **) malloc(sizeof(double *) * local_nrow);
-  (*A)->ptr_to_inds_in_row = (int **) malloc(sizeof(int *) * local_nrow);
-  (*A)->ptr_to_diags = (double **) malloc(sizeof(double *) * local_nrow);
+  (*A)->nnz_in_row =         (int     *) _mm_malloc(sizeof(int)      * local_nrow, 32);
+  (*A)->ptr_to_vals_in_row = (double **) _mm_malloc(sizeof(double *) * local_nrow, 32);
+  (*A)->ptr_to_inds_in_row = (int    **) _mm_malloc(sizeof(int    *) * local_nrow, 16);// list of ptrs. each ptr to a list of ints which are the columns that there are non-zero elements in a given row
+  (*A)->ptr_to_diags =       (double **) _mm_malloc(sizeof(double *) * local_nrow, 32);
 
   *x =      (double *) _mm_malloc(sizeof(double) * local_nrow, 32);
   *b =      (double *) _mm_malloc(sizeof(double) * local_nrow, 32);
   *xexact = (double *) _mm_malloc(sizeof(double) * local_nrow, 32);
 
   // Allocate arrays that are of length local_nnz
-  (*A)->list_of_vals = (double *) malloc(sizeof(double) * local_nnz);
-  (*A)->list_of_inds = (int *) malloc(sizeof(int) * local_nnz);
+  (*A)->list_of_vals = (double *) _mm_malloc(sizeof(double) * local_nnz, 32);
+  (*A)->list_of_inds = (int *)    _mm_malloc(sizeof(int   ) * local_nnz, 16); // list of all indexes
 
   double *curvalptr = (*A)->list_of_vals;
-  int *curindptr = (*A)->list_of_inds;
+  int *curindptr = (*A)->list_of_inds; // current col index we're filling in
 
   long long nnzglobal = 0;
   for (int iz = 0; iz < nz; iz++) {
@@ -58,7 +58,7 @@ void generate_matrix(int nx, int ny, int nz, struct mesh **A, double **x, double
         int currow = iz * nx * ny + iy * nx + ix;
         int nnzrow = 0;
         (*A)->ptr_to_vals_in_row[currow] = curvalptr;
-        (*A)->ptr_to_inds_in_row[currow] = curindptr;
+        (*A)->ptr_to_inds_in_row[currow] = curindptr; // note that this row's non-zero col indices start at the current ptr location
         for (int sz = -1; sz <= 1; sz++) {
           for (int sy = -1; sy <= 1; sy++) {
             for (int sx = -1; sx <= 1; sx++) {
@@ -70,11 +70,11 @@ void generate_matrix(int nx, int ny, int nz, struct mesh **A, double **x, double
                 if (!use_7pt_stencil || (sz * sz + sy * sy + sx * sx <= 1)) { // This logic will skip over point that are not part of a 7-pt stencil
                   if (curcol == currow) {
                     (*A)->ptr_to_diags[currow] = curvalptr;
-                    *curvalptr++ = 27.0;
+                    *curvalptr++ = 27.0; // init to 27 on the diagonal
                   } else {
-                    *curvalptr++ = -1.0;
+                    *curvalptr++ = -1.0; // and -1 otherwise
                   }
-                  *curindptr++ = curcol;
+                  *curindptr++ = curcol; // note column that value is in and put it in the index ptr. move pointer on...
                   nnzrow++;
                 }
               }
