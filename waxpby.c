@@ -1,14 +1,13 @@
 #include "waxpby.h"
 
 #include <immintrin.h>
-
 #include <stdio.h>
 
 /**
  * @brief Compute the update of a vector with the sum of two scaled vectors
  *
  * @param n Number of vector elements
- * @param alpha Scalars applied to x
+ * @param alpha Scalars applied to x -- Removed since it's never non-1.0. 
  * @param x Input vector
  * @param beta Scalars applied to y
  * @param y Input vector
@@ -23,22 +22,22 @@ int waxpby(const int n, const double* const x, const double beta, const double* 
 	if (beta == 0.0) {
 		// Equivalent to x + 0 * y, i.e. just x
 
-		#pragma omp parallel for private(i) firstprivate(loopN) schedule(guided,16)
+#pragma omp parallel for private(i) firstprivate(loopN) schedule(guided, 16)
 		for (i = 0; i < loopN; i += 4) {
 			w[i] = x[i];
-			w[i+1] = x[i+1];
-			w[i+2] = x[i+2];
-			w[i+3] = x[i+3];
+			w[i + 1] = x[i + 1];
+			w[i + 2] = x[i + 2];
+			w[i + 3] = x[i + 3];
 		}
-		
+
 		for (i = loopN; i < n; i++) {
 			w[i] = x[i];
 		}
 
 	} else if (beta == 1.0) {
 		// Equivalent to an add of x + y
-		
-		#pragma omp parallel for private(i) firstprivate(loopN) schedule(guided,16)
+
+#pragma omp parallel for private(i) firstprivate(loopN) schedule(guided, 16)
 		for (i = 0; i < loopN; i += 4) {
 			__m256d x_vec = _mm256_load_pd(x + i);
 			__m256d y_vec = _mm256_load_pd(y + i);
@@ -47,15 +46,15 @@ int waxpby(const int n, const double* const x, const double beta, const double* 
 
 			_mm256_store_pd(w + i, x_vec);
 		}
-		
+
 		for (i = loopN; i < n; i++) {
 			w[i] = x[i] + y[i];
 		}
 	} else {
 		// beta is not 0 or 1 and we have to do the calculation
 		__m256d b_vec = _mm256_set1_pd(beta);
-		
-		#pragma omp parallel for private(i) firstprivate(loopN, b_vec) schedule(guided,16)
+
+#pragma omp parallel for private(i) firstprivate(loopN, b_vec) schedule(guided, 16)
 		for (i = 0; i < loopN; i += 4) {
 			__m256d x_vec = _mm256_load_pd(x + i);
 			__m256d y_vec = _mm256_load_pd(y + i);
