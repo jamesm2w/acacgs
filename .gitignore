@@ -3,6 +3,8 @@ build/
 acacgs
 
 *.out
+*.out.*
 *.err
 
 *.sh
+*.zip
