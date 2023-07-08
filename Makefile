@@ -1,6 +1,6 @@
 #Setup compiler and key flags
 CC = gcc
-CPPFLAGS = -O3 -Wall -Wextra -Werror -mavx2 -fopenmp -march=native -mtune=native
+CPPFLAGS = -O3 -Wall -Wextra -Werror -mavx2 -fopenmp -march=native -mtune=native -ffast-math
 LIB_PATHS = -lm
 TARGET = acacgs
 
